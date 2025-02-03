@@ -138,15 +138,22 @@ async function handleError(args, error) {
   }
 
   /**
-   * Exceptions from sending errors
-   * - json/sarif flags - this would just stringify the content as the error message; could look into outputing the Error Catalog JSON
-   * - vulnsFound - issues are treated as errors (exit code 1), this should be some nice pretty formated output for users.
+   * Exception: vulnsFound
+   * - issues are treated as errors (exit code 1), this should be some nice pretty formated output for users.
+   * Exception: --all-projects && --json
+   * - these flags in combination will output a structured JSON error when encountering issues
+   * Exception: IAC
+   * - `snyk iac test --json` outputs structured JSON results and failures in an array
+   *   that could be used programatically by customers, so we will have to leave this output unaltered
+   * - doesn't impact `snyk iac test --sarif`
    */
-  const errorSent =
-    args.options.json || args.options.sarif || vulnsFound
+  const shouldOutputError =
+    vulnsFound ||
+    (args.options.iac && args.options.json) ||
+    (args.options.allProjects && args.options.json)
       ? false
-      : sendError(error);
-  if (!errorSent) {
+      : await sendError(error);
+  if (!shouldOutputError) {
     if (args.options.debug && !args.options.json) {
       const output = vulnsFound ? error.message : error.stack;
       console.log(output);

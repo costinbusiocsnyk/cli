@@ -15,12 +15,10 @@ describe('iac test with infrastructureAsCode entitlement', () => {
   afterAll(async () => teardown());
 
   it('fails to scan because the user is not entitled to infrastructureAsCode', async () => {
-    const { stdout, exitCode } = await run(
-      `snyk iac test --org=no-iac-entitlements ./iac/terraform/sg_open_ssh.tf`,
+    const { stderr, exitCode } = await run(
+      `snyk iac test -d --org=no-iac-entitlements ./iac/terraform/sg_open_ssh.tf`,
     );
-    expect(stdout).toContainText(
-      'This feature is currently not enabled for your org. To enable it, please contact snyk support.',
-    );
+    expect(stderr).toContainText('SNYK-OPENAPI-0002');
     expect(exitCode).toBe(2);
   });
 });

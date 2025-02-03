@@ -58,7 +58,7 @@ describe('snyk sbom: npm options (mocked server only)', () => {
   test('`sbom --strict-out-of-sync=true` fails to generate an SBOM for the NPM project because out-of-sync NPM lockfiles.', async () => {
     const project = await createProjectFromWorkspace('npm-out-of-sync');
 
-    const { code, stdout, stderr } = await runSnykCLI(
+    const { code, stderr } = await runSnykCLI(
       `sbom --org aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee --format cyclonedx1.4+json --strict-out-of-sync=true --debug`,
       {
         cwd: project.path(),
@@ -67,9 +67,7 @@ describe('snyk sbom: npm options (mocked server only)', () => {
     );
 
     expect(code).toEqual(2);
-    expect(stdout).toContainText(
-      'An error occurred while running the underlying analysis needed to generate the SBOM.',
-    );
+    expect(stderr).toContainText('SNYK-CLI-0000');
     expect(stderr).toContainText(
       'OutOfSyncError: Dependency snyk was not found in package-lock.json.',
     );

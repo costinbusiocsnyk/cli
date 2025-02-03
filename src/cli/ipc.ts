@@ -3,9 +3,10 @@ import { CLI, ProblemError } from '@snyk/error-catalog-nodejs-public';
 import { debug as Debug } from 'debug';
 import * as legacyErrors from '../lib/errors/legacy-errors';
 import stripAnsi = require('strip-ansi');
+import { CustomError } from '../lib/errors';
 
 const ERROR_FILE_PATH = process.env.SNYK_ERR_FILE;
-const debug = Debug('snyk');
+const debug = Debug('snyk:ipc');
 
 /**
  * Sends the specified error back at the Golang CLI, by writting it to the temporary error file. Errors that are not
@@ -21,13 +22,17 @@ export async function sendError(err: Error): Promise<boolean> {
 
   // @ts-expect-error Using this instead of 'instanceof' since the error might be caught from external CLI plugins.
   // See: https://github.com/snyk/error-catalog/blob/main/packages/error-catalog-nodejs/src/problem-error.ts#L17-L19
-  if (!err.isErrorCatalogError) {
+  if (!err.isErrorCatalogError && !err.errorCatalog) {
     const detail: string = stripAnsi(legacyErrors.message(err));
     if (!detail || detail.trim().length === 0) return false;
 
     err = new CLI.GeneralCLIFailureError(detail);
     // @ts-expect-error Overriding with specific err code from CustomErrors, or 0 for
     err.metadata.status = 0;
+  }
+
+  if (err instanceof CustomError && err.errorCatalog) {
+    err = err.errorCatalog;
   }
 
   const data = (err as ProblemError)
